@@ -24,6 +24,13 @@ function groupBroadCast(group, filter, message){
 	});
 }
 
+
+function logGroupMembers(group){
+	group.forEach(function(member, idx){
+		console.log("Member %d on group: %s", idx, member.id);
+	});
+}
+
 wss.on('connection', function connection(ws){
 	var id = guid();
 	// clients[id] = ws;
@@ -74,14 +81,20 @@ wss.on('connection', function connection(ws){
 	
 	ws.on('close', function(){
 		console.log('Closed connection: %s', ws.id);
-		var index;
+		var index = -1;
 		if(ws.group_id && groups[ws.group_id]){
-			groups[ws.group_id].filter(function(el, idx){
-				index = idx;
-				return el.id == ws.id;
+			groups[ws.group_id].forEach(function(el, idx){
+				if(el.id == ws.id){
+					index = idx;
+					return true;
+				}
+				return false;
 			});
-			groups[ws.group_id].splice(index, 1);
+			if(index == -1){
+				console.log('Error, unable to remove someone from the group...');
+			}
 			groupBroadCast(groups[ws.group_id], filterOut, JSON.stringify({left:ws.id}));
+			groups[ws.group_id].splice(index, 1);
 		}
 	});
 });
